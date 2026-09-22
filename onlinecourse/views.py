@@ -1,18 +1,13 @@
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
-# <HINT> Import any new Models here
-from .models import Course, Enrollment
-from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.views import generic
+from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
+from .models import Course, Lesson, Question, Choice, Submission, Enrollment
 import logging
+
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
-# Create your views here.
-
-
 def registration_request(request):
     context = {}
     if request.method == 'GET':
@@ -104,6 +99,21 @@ def enroll(request, course_id):
 
 
 # <HINT> Create a submit view to create an exam submission record for a course enrollment,
+def submit(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('choice')
+        enrollment = Enrollment.objects.get(user=request.user, course=course)
+        submission = Submission.objects.create(enrollment=enrollment)
+        
+        for choice_id in selected_ids:
+            choice = Choice.objects.get(pk=choice_id)
+            submission.choices.add(choice)
+            
+        return render(request, 'onlinecourse/exam_result_bootstrap.html', {
+            'course': course,
+            'submission': submission,
+        })
 # you may implement it based on following logic:
          # Get user and course object, then get the associated enrollment object created when the user enrolled the course
          # Create a submission object referring to the enrollment
